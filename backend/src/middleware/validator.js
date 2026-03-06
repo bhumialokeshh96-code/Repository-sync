@@ -1,20 +1,33 @@
-const { body, validationResult } = require('express-validator');
+// validator.js - Joi input validation middleware for contacts upload
 
-// Middleware for validating input data
-const validateInput = [
-    // Example validation rules
-    body('username').isString().isLength({ min: 3, max: 20 }).withMessage('Username must be between 3 and 20 characters long'),
-    body('email').isEmail().withMessage('Must be a valid email address'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+const Joi = require('joi');
 
-    // Custom validation error handler
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        next();
+const contactsUploadSchema = Joi.object({
+    userId: Joi.string().trim().min(1).max(255).required(),
+    contacts: Joi.array()
+        .items(
+            Joi.object({
+                phone: Joi.string()
+                    .pattern(/^\d{10}$/)
+                    .required()
+                    .messages({
+                        'string.pattern.base': 'Each phone number must be exactly 10 digits',
+                    }),
+            })
+        )
+        .min(1)
+        .required(),
+});
+
+const validateContactsUpload = (req, res, next) => {
+    const { error } = contactsUploadSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+        return res.status(400).json({
+            error: 'Validation failed',
+            details: error.details.map((d) => d.message),
+        });
     }
-];
+    next();
+};
 
-module.exports = validateInput;
+module.exports = { validateContactsUpload };

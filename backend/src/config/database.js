@@ -1,18 +1,16 @@
-// database.js
+// database.js - MySQL connection pool
 
-const mongoose = require('mongoose');
+const mysql = require('mysql2/promise');
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log('MongoDB connected successfully');
-    } catch (error) {
-        console.error('MongoDB connection failed:', error);
-        process.exit(1);
-    }
-};
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'contact_sync',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+});
 
-module.exports = connectDB;
+module.exports = pool;

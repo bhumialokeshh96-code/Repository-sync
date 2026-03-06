@@ -1,0 +1,19 @@
+# Node.js
+backend/node_modules/
+node_modules/
+npm-debug.log*
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# Environment files (keep .env as a template but not secrets)
+# backend/.env  # kept in repo as a template with placeholder values
+
+# IDE files
+.idea/
+*.iml
+.DS_Store
