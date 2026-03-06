@@ -2,18 +2,10 @@
 
 const express = require('express');
 const router = express.Router();
+const { validateContactsUpload } = require('../middleware/validator');
+const { uploadContactsHandler } = require('../controllers/contactController');
 
-// GET contact form
-router.get('/contact', (req, res) => {
-    res.send('Contact form');
-});
-
-// POST contact form
-router.post('/contact', (req, res) => {
-    // Process contact form data
-    const { name, email, message } = req.body;
-    // Here you would typically handle the data, e.g., save to database or send email
-    res.send(`Thank you for contacting us, ${name}.`);
-});
+// POST /contacts/upload - Upload device contacts for a user
+router.post('/upload', validateContactsUpload, uploadContactsHandler);
 
 module.exports = router;

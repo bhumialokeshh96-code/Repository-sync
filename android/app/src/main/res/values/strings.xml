@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Contact Sync</string>
+    <string name="sync_contacts">Sync Contacts</string>
+    <string name="syncing">Syncing contacts…</string>
+    <string name="sync_success">%d contact(s) uploaded successfully.</string>
+    <string name="sync_error">Sync failed: %s</string>
+    <string name="permission_denied">Permission denied. Cannot read contacts.</string>
+    <string name="no_contacts_found">No valid contacts found on device.</string>
+</resources>

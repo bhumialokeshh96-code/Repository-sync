@@ -1,62 +1,46 @@
-// contactService.js
+// contactService.js - Business logic for uploading contacts to MySQL
 
-// Mock contact list
-const contacts = [
-    { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com' },
-];
+const pool = require('../config/database');
 
 /**
- * Function to get all contacts
+ * Upload a batch of contacts for a user.
+ * Deduplicates both within the batch and against existing DB records.
+ * Uses INSERT IGNORE to skip duplicate (user_id, phone) pairs.
+ *
+ * @param {string} userId
+ * @param {Array<{phone: string}>} contacts
+ * @returns {Promise<{savedCount: number}>}
  */
-const getAllContacts = () => {
-    return contacts;
-};
+const uploadContacts = async (userId, contacts) => {
+    // Deduplicate within the incoming batch
+    const uniquePhones = [...new Set(contacts.map((c) => c.phone))];
 
-/**
- * Function to get a contact by ID
- * @param {number} id - ID of the contact
- */
-const getContactById = (id) => {
-    return contacts.find(contact => contact.id === id);
-};
-
-/**
- * Function to add a new contact
- * @param {string} name - Name of the contact
- * @param {string} email - Email of the contact
- */
-const addContact = (name, email) => {
-    const newContact = { id: contacts.length + 1, name, email };
-    contacts.push(newContact);
-    return newContact;
-};
-
-/**
- * Function to update a contact
- * @param {number} id - ID of the contact to update
- * @param {string} name - New name for the contact
- * @param {string} email - New email for the contact
- */
-const updateContact = (id, name, email) => {
-    const contact = getContactById(id);
-    if (contact) {
-        contact.name = name;
-        contact.email = email;
+    if (uniquePhones.length === 0) {
+        return { savedCount: 0 };
     }
-    return contact;
-};
 
-/**
- * Function to delete a contact
- * @param {number} id - ID of the contact to delete
- */
-const deleteContact = (id) => {
-    const index = contacts.findIndex(contact => contact.id === id);
-    if (index !== -1) {
-        return contacts.splice(index, 1);
+    let savedCount = 0;
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        // Use individual parameterized INSERT IGNORE statements to avoid
+        // building dynamic SQL with variable numbers of placeholders.
+        for (const phone of uniquePhones) {
+            const [result] = await connection.execute(
+                'INSERT IGNORE INTO contacts (user_id, phone) VALUES (?, ?)',
+                [userId, phone]
+            );
+            savedCount += result.affectedRows;
+        }
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
     }
-    return null;
+
+    return { savedCount };
 };
 
-module.exports = { getAllContacts, getContactById, addContact, updateContact, deleteContact };
+module.exports = { uploadContacts };
